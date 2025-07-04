@@ -7,6 +7,9 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from io import BytesIO
 from parsing import parse_pdf, process_json_blocks
 from pathlib import Path
+from prompts import PromptGenerator
+
+generator = PromptGenerator()
 
 # Dummy placeholder function: replace this with your actual logic
 def process_pdf(pdf_path):
@@ -47,20 +50,21 @@ def generate_docx(data):
     for section in data:
         section_header = section.get("Section_header", "Untitled Section")
         doc.add_heading(section_header, level=1)
-
         prompts = section.get("Prompts", [])
         for prompt in prompts:
             type_ = prompt.get("type", "Unknown")
-            sub_section = prompt.get("Sub-section", "Untitled")
-            prompt_text = prompt.get("Prompt", "")
+            # sub_section = prompt.get("Sub-section", "Untitled")
+            prompt_text = prompt.get("prompt", "")
 
-            doc.add_heading(sub_section, level=2)
+            if type_ == "Text" or "Table" or "Figure" or "List Item":
 
-            p = doc.add_paragraph()
-            run = p.add_run(f"Type: {type_}")
-            run.bold = True
+                doc.add_heading("sub-section", level=2)
 
-            doc.add_paragraph(prompt_text)
+                p = doc.add_paragraph()
+                run = p.add_run(f"Type: {type_}")
+                run.bold = True
+
+                doc.add_paragraph(prompt_text)
 
     # Save to BytesIO for download
     buffer = BytesIO()
@@ -84,9 +88,10 @@ if uploaded_file:
     file_path = Path(tmp_file_path)
     parsing_output = parse_pdf(file_path,API_KEY)
     parsing_json = process_json_blocks(parsing_output)
+    results = generator.process_final_json(parsing_json)
 
     # Generate the DOCX
-    docx_file = generate_docx(parsing_json)
+    docx_file = generate_docx(results)
 
     # Provide download button
     st.download_button(
@@ -98,4 +103,4 @@ if uploaded_file:
 
     # Optional: Show preview of the data
     st.subheader("Parsed Output")
-    st.json(parsing_json)
+    st.json(results)

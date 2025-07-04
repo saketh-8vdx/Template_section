@@ -1,4 +1,8 @@
 streamlit
 python-docx
+langchain-community
+scikit-learn
+langfuse
+openai
 
 
